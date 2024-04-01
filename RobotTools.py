@@ -1,4 +1,4 @@
-import serial, time
+import serial, time as t
 
 def inputModulus(input, min, max):
     mod = max - min
@@ -12,30 +12,48 @@ def inputModulus(input, min, max):
     return input
 
 class RobotBase:
-    def __init__(self):
-        self.ser = serial.Serial('/dev/ttyACM0', 115200, timeout=0.02)
+    #Port usually /dev/ttyACM0
+    def __init__(self, serialPort):
+        self.ser = serial.Serial(serialPort, 115200, timeout=0.02)
         self.ser.reset_input_buffer()
         time.sleep(1)
 
-class SwerveDrive:
-    def __init__(self):
-        pass
 
+class SwerveDrive:
+    def __init__(self, modules, gyro):
+        self.modules = modules
+    
+    def setModuleStatesFromSpeeds(self, Vx, Vy, Vtheta):
+        #convert speeds to states from kinematics here
+        pass
+    
+    def setModuleStates(self, states):
+        for i in range(self.modules):
+            self.modules[i].setModuleState(states[i].velocity, states[i].angle)
+
+    
 class SwerveModule:
-    def __init__(self, leftMotor, rightMotor, turnEncoder):
+    def __init__(self, leftMotor, rightMotor, turnEncoder, anglePID, drivePID):
         self.leftMotor = leftMotor
         self.rightMotor = rightMotor
         self.turnEncoder = turnEncoder
+        self.anglePID = anglePID
+        self.drivePID = drivePID
     
     def setMotorSpeeds(self, leftSpeed, rightSpeed):
         self.leftMotor.setSpeed(leftSpeed)
         self.rightMotor.setSpeed(rightSpeed)
+
+    def setModuleState(self, driveVelocity, angle):
+        
+        return
         
 class MotorController(RobotBase):
-    def __init__(self, speedPin, leftDirPin, rightDirPin):
+    def __init__(self, speedPin, leftDirPin, rightDirPin, encoder):
         self.speedPin = speedPin
         self.leftDirPin = leftDirPin
         self.rightDirPin = rightDirPin
+        self.encoder = encoder
 
     def setPinVal(self, pin, value):
         self.ser.write(('0' * (2 - len(str(pin))) + str(pin) + ',' + '0' * (3 - len(str(value))) + str(value)).encode())
@@ -49,7 +67,10 @@ class MotorController(RobotBase):
             self.setPinVal(self.rightDirPin, 255)
 
         speed = (int) (abs(speed * 255))
-        self.setPinVal(self.speedPin, speed)      
+        self.setPinVal(self.speedPin, speed)
+
+    def getMotorPosition(self):
+        return self.encoder.getPosition()
 
 class PIDController:
     kP, kI, kD = 0
@@ -71,7 +92,7 @@ class PIDController:
         self.lowerBound = lowerBound
         self.upperBound = upperBound
 
-    def calculate(self, setpoint, measurement, time):
+    def calculate(self, setpoint, measurement):
         self.prevError = self.positionError
 
         if self.isContinuous:
@@ -80,6 +101,8 @@ class PIDController:
         else:
             positionError = setpoint - measurement
         
+        time = t.time()
+
         if self.lastTime <= 0: self.lastTime = time
         period = time - self.lastTime
         if period <= 0: return 0

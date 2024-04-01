@@ -16,7 +16,7 @@ class RobotBase:
     def __init__(self, serialPort):
         self.ser = serial.Serial(serialPort, 115200, timeout=0.02)
         self.ser.reset_input_buffer()
-        time.sleep(1)
+        t.sleep(1)
 
 
 class SwerveDrive:
@@ -33,11 +33,11 @@ class SwerveDrive:
 
     
 class SwerveModule:
-    def __init__(self, leftMotor, rightMotor, turnEncoder, anglePID, drivePID):
+    def __init__(self, leftMotor, rightMotor, turnEncoder, turnPID, drivePID):
         self.leftMotor = leftMotor
         self.rightMotor = rightMotor
         self.turnEncoder = turnEncoder
-        self.anglePID = anglePID
+        self.turnPID = turnPID
         self.drivePID = drivePID
     
     def setMotorSpeeds(self, leftSpeed, rightSpeed):
@@ -45,8 +45,12 @@ class SwerveModule:
         self.rightMotor.setSpeed(rightSpeed)
 
     def setModuleState(self, driveVelocity, angle):
-        
-        return
+        driveOutput = self.drivePID.calculate(driveVelocity, self.getModuleVelocity)
+        turnOutput = self.turnPID.calculate(angle, self.turnEncoder.getPosition())
+        self.setMotorSpeeds(driveOutput + turnOutput, -driveOutput + turnOutput)
+
+    def getModuleVelocity(self):
+        pass #(self.leftMotor.getVelocity() - self.rightMotor.getVelocity()) / (2 * PI) * WHEEL_DIAMETER
         
 class MotorController(RobotBase):
     def __init__(self, speedPin, leftDirPin, rightDirPin, encoder):
@@ -69,8 +73,11 @@ class MotorController(RobotBase):
         speed = (int) (abs(speed * 255))
         self.setPinVal(self.speedPin, speed)
 
-    def getMotorPosition(self):
+    def getPosition(self):
         return self.encoder.getPosition()
+    
+    def getVelocity(self):
+        return self.encoder.getVelocity()
 
 class PIDController:
     kP, kI, kD = 0
@@ -102,7 +109,6 @@ class PIDController:
             positionError = setpoint - measurement
         
         time = t.time()
-
         if self.lastTime <= 0: self.lastTime = time
         period = time - self.lastTime
         if period <= 0: return 0

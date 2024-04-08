@@ -1,4 +1,4 @@
-import threading
+from continuous_threading import ContinuousThread
 import evdev
 import math
 
@@ -9,10 +9,13 @@ class XboxController:
     def __init__(self):
         self.LeftJoystickY = 0
         self.LeftJoystickX = 0
-        # ... (initialize other attributes as before)
+        # Add other attributes here (e.g., RightJoystickY, RightJoystickX, etc.)
 
-        self._monitor_thread = threading.Thread(target=self._monitor_controller, args=())
-        self._monitor_thread.daemon = True
+        self.A = 0  # Initialize the A button attribute
+        self.X = 0  # Initialize the X button attribute
+        # Add other button attributes here (e.g., B, Y, RB, etc.)
+
+        self._monitor_thread = ContinuousThread(target=self._monitor_controller)
         self._monitor_thread.start()
 
     def read(self):
@@ -39,13 +42,13 @@ class XboxController:
                     self.LeftJoystickY = event.value / XboxController.MAX_JOY_VAL
                 elif event.code == evdev.ecodes.ABS_X:
                     self.LeftJoystickX = event.value / XboxController.MAX_JOY_VAL
-                # ... (add other joystick mappings)
+                # Add other joystick mappings here
             elif event.type == evdev.ecodes.EV_KEY:
-                if event.code == evdev.ecodes.BTN_SOUTH:
+                if event.code == evdev.ecodes.BTN_SOUTH:  # A button
                     self.A = event.value
-                elif event.code == evdev.ecodes.BTN_NORTH:
+                elif event.code == evdev.ecodes.BTN_NORTH:  # X button
                     self.X = event.value
-                # ... (add other button mappings)
+                # Add other button mappings here
 
 # Example usage:
 controller = XboxController()

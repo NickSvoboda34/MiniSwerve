@@ -1,22 +1,11 @@
 from RobotTools import SwerveDriveKinematics
 from evdev import InputDevice, categorize, ecodes
+from RobotTools import Controller
 
-kinematics = SwerveDriveKinematics.SwerveDriveKinematics([[-6, 6], [6, 6], [-6, -6], [6, -6]])
-
-controller = InputDevice('/dev/input/event8')
-
-lx, ly, rx = 0, 0, 0
+kinematics = SwerveDriveKinematics.SwerveDriveKinematics([[-1, 1], [1, 1], [-1, -1], [1, -1]])
+controller = Controller.XboxController()
 
 while True:
-    for event in controller.read_loop():
-        if event.type == ecodes.EV_ABS:
-            if event.code == 0:
-                lx = (int) (abs(1 - event.value / 32767) * 255)
-            if event.code == 1:
-                ly = (int) (abs(1 - event.value / 32767) * 255)
-            if event.code == 2:
-                rx = (int) (abs(1 - event.value / 32767) * 255)
-
-        speeds = [lx, ly, rx]
-        print('\n' * 10)
-        print(kinematics.toModuleStates(speeds, [0, 0]))
+    controllerValues = controller.read()
+    controllerValues = Controller.applyDeadzone(controllerValues, 0.1)
+    print(kinematics.toModuleStates([controllerValues[0], controllerValues[1], controllerValues[2]], [0, 0]))

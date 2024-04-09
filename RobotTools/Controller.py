@@ -1,5 +1,5 @@
 from threading import Thread
-import evdev
+import evdev # type: ignore
 import math
 import time
 

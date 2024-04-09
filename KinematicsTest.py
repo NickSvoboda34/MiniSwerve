@@ -1,5 +1,4 @@
 from RobotTools import SwerveDriveKinematics
-from evdev import InputDevice, categorize, ecodes
 from RobotTools import Controller
 
 kinematics = SwerveDriveKinematics.SwerveDriveKinematics([[-1, 1], [1, 1], [-1, -1], [1, -1]])

@@ -17,6 +17,8 @@ class AS5600:
         self.lastPosition = None
         self.channel = channel
         self.loopTime = 0.02
+        self.position = 0
+        self.velocity = 0
 
         self.monitorThread = Thread(target=self.monitorEncoder)
         self.monitorThread.daemon = True
@@ -36,10 +38,9 @@ class AS5600:
             self.select_multiplexer_channel(self.channel)    
 
             # Read the angle from the AS5600
-            raw_data = self.bus.read_word_data(self.encoder_address, 0x0E)
-            angle_degrees = (raw_data & 0x0FFF) * 0.08789  # Convert raw data to degrees
-            self.position = math.radians(angle_degrees)
-
+            raw_data = self.bus.read_i2c_block_data(self.encoder_address, 0x0E, 2)
+            self.position = ((raw_data[0]<<8) | raw_data[1]) / 4096 * math.pi * 2 # Convert raw data to degrees
+            
             if self.lastPosition == None: self.velocity = 0
             else: self.velocity = (self.position - self.lastPosition) / self.loopTime
             self.lastPosition = self.position
@@ -68,9 +69,12 @@ if __name__ == "__main__":
     i2c_bus_number = 1
     tca9548a_address = 0x70  # Replace with your actual TCA9548A address
 
-    angle_reader = AS5600(i2c_bus_number, tca9548a_address)
-    current_angle = angle_reader.getPosition()
-    print(f"Current angle: {current_angle:.2f} radians")
+    encoder1 = AS5600(tca9548a_address, 0)
+    encoder2 = AS5600(tca9548a_address, 1)
+    encoder3 = AS5600(tca9548a_address, 2)
 
-    angular_velocity = angle_reader.getVelocity()
-    print(f"Angular velocity: {angular_velocity:.2f} radians per second")
+    while True:
+        pos1 = encoder1.getPosition()
+        pos2 = encoder2.getPosition()
+        pos3 = encoder3.getPosition()
+        print(f"Current angle: {pos1:.2f}, {pos2:.2f}, {pos3:.2f}")

@@ -19,6 +19,7 @@ class AS5600:
         self.loopTime = 0.02
         self.position = 0
         self.velocity = 0
+        self.magnitude = 0
 
         self.monitorThread = Thread(target=self.monitorEncoder)
         self.monitorThread.daemon = True
@@ -39,11 +40,14 @@ class AS5600:
 
             # Read the angle from the AS5600
             raw_data = self.bus.read_i2c_block_data(self.encoder_address, 0x0E, 2)
-            self.position = ((raw_data[0]<<8) | raw_data[1]) / 4096 * math.pi * 2 # Convert raw data to degrees
+            self.position = ((raw_data[0]<<8) | raw_data[1]) / 4096 * math.pi * 2 - math.pi # Convert raw data to degrees
             
             if self.lastPosition == None: self.velocity = 0
-            else: self.velocity = (self.position - self.lastPosition) / self.loopTime
+            else: self.velocity = math.copysign((abs(self.position) - abs(self.lastPosition)) / self.loopTime, self.position - self.lastPosition)
             self.lastPosition = self.position
+
+            raw_data = self.bus.read_i2c_block_data(self.encoder_address, 0x1B, 2)
+            self.magnitude = (raw_data[0]<<8) | raw_data[1]
 
             time.sleep(self.loopTime)
 
@@ -51,7 +55,7 @@ class AS5600:
         """
         Reads the angle from the AS5600 encoder.
 
-        :return: Angle in radians (0 to 2*pi).
+        :return: Angle in radians (-pi to pi).
         """   
 
         return self.position
@@ -74,7 +78,11 @@ if __name__ == "__main__":
     encoder3 = AS5600(tca9548a_address, 2)
 
     while True:
-        pos1 = encoder1.getPosition()
-        pos2 = encoder2.getPosition()
-        pos3 = encoder3.getPosition()
-        print(f"Current angle: {pos1:.2f}, {pos2:.2f}, {pos3:.2f}")
+        pos = encoder1.getPosition()
+        vel = encoder1.getVelocity()
+        print(f"Position: {pos:.2f}, Velocity: {vel:.2f}")
+
+        #pos1 = encoder1.getPosition()
+        #pos2 = encoder2.getPosition()
+        #pos3 = encoder3.getPosition()
+        #print(f"Current angle: {pos1:.2f}, {pos2:.2f}, {pos3:.2f}")

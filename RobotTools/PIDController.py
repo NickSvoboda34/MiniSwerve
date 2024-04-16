@@ -1,7 +1,7 @@
 import RobotMath, time as t
 
 class PIDController:
-    kP, kI, kD = 0
+    kP, kI, kD = 0, 0, 0
     isContinuous = False
     setpoint = 0
     positionError = 0

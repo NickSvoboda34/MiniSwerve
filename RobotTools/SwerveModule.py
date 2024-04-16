@@ -29,9 +29,6 @@ class SwerveModule:
 if __name__ == '__main__' :
     base = RobotBase('/dev/ttyACM0')
 
-    print(base.ser)
-    print()
-
     leftMotor = MotorController(2, 24, 25, AS5600(0x70, 0))
     rightMotor = MotorController(3, 22, 23, AS5600(0x70, 2))
     encoder = AS5600(0x70, 1)

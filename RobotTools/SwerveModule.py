@@ -40,4 +40,4 @@ if __name__ == '__main__' :
     module = SwerveModule(leftMotor, rightMotor, encoder, turnPID, drivePID)
 
     while True: 
-        module.setModuleSpeeds(0, 0)
+        module.setModuleState(0, 0)
